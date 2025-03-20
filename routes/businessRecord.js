@@ -4,26 +4,26 @@ const router = express.Router();
 const { BusinessRecord } = require('../models');
 const { Op } = require('sequelize');
 
-// Barangay mapping for lookup
-const barangayMapping = {
-  "malbang": 1,
-  "nomoh": 2,
-  "seven hills": 3,
-  "pananag": 4,
-  "daliao": 5,
-  "colon": 6,
-  "amsipit": 7,
-  "bales": 8,
-  "kamanga": 9,
-  "kablacan": 10,
-  "kanalo": 11,
-  "lumatil": 12,
-  "lumasal": 13,
-  "tinoto": 14,
-  "public market": 15,
-  "poblacion": 16,
-  "kabatiol": 17
-};
+// // Barangay mapping for lookup
+// const barangayMapping = {
+//   "malbang": 1,
+//   "nomoh": 2,
+//   "seven hills": 3,
+//   "pananag": 4,
+//   "daliao": 5,
+//   "colon": 6,
+//   "amsipit": 7,
+//   "bales": 8,
+//   "kamanga": 9,
+//   "kablacan": 10,
+//   "kanalo": 11,
+//   "lumatil": 12,
+//   "lumasal": 13,
+//   "tinoto": 14,
+//   "public market": 15,
+//   "poblacion": 16,
+//   "kabatiol": 17
+// };
 
 // ✅ POST handler for adding new records from your React form
 router.post('/', async (req, res) => {
@@ -74,7 +74,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-
 // ✅ Existing GET handler (fetching records by ownerId & barangay)
 router.get('/', async (req, res) => {
   try {
@@ -108,5 +107,39 @@ router.get('/', async (req, res) => {
   }
 });
 
+// ✅ UPDATE handler - update an existing Business Record by its id
+router.put('/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const record = await BusinessRecord.findByPk(id);
+    if (!record) {
+      return res.status(404).json({ message: 'Record not found.' });
+    }
+    const updatedRecord = await record.update(req.body);
+    return res.status(200).json({
+      message: 'Record updated successfully',
+      record: updatedRecord
+    });
+  } catch (error) {
+    console.error('Error updating record:', error);
+    return res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
+});
+
+// ✅ DELETE handler - remove a Business Record by its id
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const record = await BusinessRecord.findByPk(id);
+    if (!record) {
+      return res.status(404).json({ message: 'Record not found.' });
+    }
+    await record.destroy();
+    return res.status(200).json({ message: 'Record deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting record:', error);
+    return res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
+});
 
 module.exports = router;
