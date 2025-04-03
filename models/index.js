@@ -30,12 +30,21 @@ fs.readdirSync(__dirname)
     db[model.name] = model;
   });
 
-// Explicitly define associations
-db.Applicant.hasMany(db.BusinessRecord, { foreignKey: 'applicantId', as: 'businessRecords' });
-db.BusinessRecord.belongsTo(db.Applicant, { foreignKey: 'applicantId', as: 'applicant' });
+// Optionally, if you want to add associations involving the User model,
+// ensure that the user model is loaded and then define associations.
+// For example, if a User can have many BusinessRecords:
+if (db.User && db.BusinessRecord) {
+  db.User.hasMany(db.BusinessRecord, { foreignKey: 'userId', as: 'businessRecords' });
+  db.BusinessRecord.belongsTo(db.User, { foreignKey: 'userId', as: 'user' });
+}
+
+// Existing associations for other models
+if (db.Applicant && db.BusinessRecord) {
+  db.Applicant.hasMany(db.BusinessRecord, { foreignKey: 'applicantId', as: 'businessRecords' });
+  db.BusinessRecord.belongsTo(db.Applicant, { foreignKey: 'applicantId', as: 'applicant' });
+}
 
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
 module.exports = db;
-  

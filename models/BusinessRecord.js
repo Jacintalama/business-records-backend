@@ -35,8 +35,10 @@ module.exports = (sequelize, DataTypes) => {
     docTax: DataTypes.STRING,
     eggsFee: DataTypes.STRING,
     market: DataTypes.STRING,
+    marketCertification: DataTypes.STRING, // new field
     surcharge25: DataTypes.STRING,
-    surcharge5: DataTypes.STRING,
+    sucharge2: DataTypes.STRING, // renamed from surcharge5
+    miscellaneous: DataTypes.STRING, // new field
     totalPayment: DataTypes.STRING,
     remarks: DataTypes.STRING,
   }, {

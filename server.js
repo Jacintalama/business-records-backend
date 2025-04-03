@@ -1,35 +1,43 @@
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
+
 const app = express();
 
-// Enable CORS for frontend running on localhost:3001
+// Allow requests from your frontend over the network
 app.use(cors({
-  origin: 'http://localhost:3001'
+  origin: 'http://192.168.1.107:3001', // <-- update this to your actual frontend URL
+  credentials: true,
 }));
 
 app.use(express.json());
+app.use(cookieParser());
 
-// Correctly import routes (ensure these match your actual filenames exactly)
-const businessRecordRoutes = require('./routes/businessRecord')
-const applicantsRoutes = require('./routes/applicants'); 
+// Routes
+const businessRecordRoutes = require('./routes/businessRecord');
+const applicantsRoutes = require('./routes/applicants');
+const authRoutes = require('./routes/auth');
 
-// Mount route middleware with clear endpoint naming
+app.get('/', (req, res) => {
+  res.send('🚀 Backend API is running. Use /api/... endpoints.');
+});
+
 app.use('/api/business-record', businessRecordRoutes);
 app.use('/api/applicants', applicantsRoutes);
+app.use('/api/auth', authRoutes);
 
-// Catch-all route for undefined endpoints (optional but recommended)
 app.use('*', (req, res) => {
   res.status(404).json({ message: 'Endpoint not found' });
 });
 
-// Proper error handling middleware
 app.use((err, req, res, next) => {
   console.error('Server Error:', err.stack);
   res.status(500).json({ message: 'Internal Server Error', error: err.message });
 });
 
-// Start the server on specified port
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server is running on port ${PORT}`);
+
+// ✅ Important: allow LAN access
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server is running on http://0.0.0.0:${PORT}`);
 });
