@@ -1,4 +1,5 @@
 'use strict';
+const { Model } = require('sequelize');
 
 module.exports = {
   async up(queryInterface, Sequelize) {
@@ -47,6 +48,9 @@ module.exports = {
       policeClearance: Sequelize.STRING,
       taxClearance: Sequelize.STRING,
       garbage: Sequelize.STRING,
+      garbageCollection: Sequelize.STRING,  // New column added
+      polluters: Sequelize.STRING,          // New column added
+      Occupation: Sequelize.STRING,         // New column added
       verification: Sequelize.STRING,
       weightAndMass: Sequelize.STRING,
       healthClearance: Sequelize.STRING,
@@ -54,13 +58,25 @@ module.exports = {
       menro: Sequelize.STRING,
       docTax: Sequelize.STRING,
       eggsFee: Sequelize.STRING,
-      market: Sequelize.STRING,
+      // Removed market column
       marketCertification: Sequelize.STRING,
       surcharge25: Sequelize.STRING,
       sucharge2: Sequelize.STRING, 
       miscellaneous: Sequelize.STRING,
       totalPayment: Sequelize.STRING,
       remarks: Sequelize.STRING,
+      // New frequency column:
+      frequency: {
+         type: Sequelize.ENUM('quarterly', 'semi-annual', 'annual'),
+         allowNull: false,
+         defaultValue: 'annual'
+      },
+      // New renewed field:
+      renewed: {
+         type: Sequelize.BOOLEAN,
+         allowNull: false,
+         defaultValue: false
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE

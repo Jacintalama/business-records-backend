@@ -27,6 +27,9 @@ module.exports = (sequelize, DataTypes) => {
     policeClearance: DataTypes.STRING,
     taxClearance: DataTypes.STRING,
     garbage: DataTypes.STRING,
+    garbageCollection: DataTypes.STRING,  // New field added
+    polluters: DataTypes.STRING,          // New field added
+    Occupation: DataTypes.STRING,         // New field added
     verification: DataTypes.STRING,
     weightAndMass: DataTypes.STRING,
     healthClearance: DataTypes.STRING,
@@ -34,13 +37,25 @@ module.exports = (sequelize, DataTypes) => {
     menro: DataTypes.STRING,
     docTax: DataTypes.STRING,
     eggsFee: DataTypes.STRING,
-    market: DataTypes.STRING,
-    marketCertification: DataTypes.STRING, // new field
+    // Removed market field
+    marketCertification: DataTypes.STRING,
     surcharge25: DataTypes.STRING,
     sucharge2: DataTypes.STRING, // renamed from surcharge5
-    miscellaneous: DataTypes.STRING, // new field
+    miscellaneous: DataTypes.STRING,
     totalPayment: DataTypes.STRING,
     remarks: DataTypes.STRING,
+    // New frequency field:
+    frequency: {
+      type: DataTypes.ENUM('quarterly', 'semi-annual', 'annual'),
+      allowNull: false,
+      defaultValue: 'annual'
+    },
+    // New renewal flag field:
+    renewed: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    }
   }, {
     sequelize,
     modelName: 'BusinessRecord',
