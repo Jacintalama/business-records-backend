@@ -27,6 +27,12 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: false,
     },
+    // New attribute for Nature of Business
+    natureOfBusiness: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: 'Nature of Business', // Maps model attribute to column "Nature of Business"
+    },
     capitalInvestment: {
       type: DataTypes.FLOAT,
       allowNull: false,

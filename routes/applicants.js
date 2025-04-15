@@ -22,12 +22,20 @@ router.get('/', async (req, res) => {
 // CREATE a new applicant
 router.post('/', async (req, res) => {
   try {
-    const { applicantName, applicantAddress, businessName, capitalInvestment } = req.body;
+    const {
+      applicantName,
+      applicantAddress,
+      businessName,
+      capitalInvestment,
+      natureOfBusiness  // New field for "Nature of Business"
+    } = req.body;
+
     const newApplicant = await Applicant.create({
       applicantName,
       applicantAddress,
       businessName,
       capitalInvestment,
+      natureOfBusiness,
     });
     return res.status(201).json({
       message: 'Applicant created successfully',
@@ -43,16 +51,25 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { applicantName, applicantAddress, businessName, capitalInvestment } = req.body;
+    const {
+      applicantName,
+      applicantAddress,
+      businessName,
+      capitalInvestment,
+      natureOfBusiness  // New field for "Nature of Business"
+    } = req.body;
+
     const applicant = await Applicant.findByPk(id);
     if (!applicant) {
       return res.status(404).json({ message: 'Applicant not found.' });
     }
+
     const updatedApplicant = await applicant.update({
       applicantName,
       applicantAddress,
       businessName,
       capitalInvestment,
+      natureOfBusiness,
     });
     return res.status(200).json({
       message: 'Applicant updated successfully',

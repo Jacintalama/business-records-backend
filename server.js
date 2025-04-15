@@ -17,6 +17,7 @@ app.use(cookieParser());
 const businessRecordRoutes = require('./routes/businessRecord');
 const applicantsRoutes = require('./routes/applicants');
 const authRoutes = require('./routes/auth');
+const boatRecordsRoutes = require('./routes/boatrecords'); // Added boat records routes
 
 app.get('/', (req, res) => {
   res.send('🚀 Backend API is running. Use /api/... endpoints.');
@@ -25,6 +26,7 @@ app.get('/', (req, res) => {
 app.use('/api/business-record', businessRecordRoutes);
 app.use('/api/applicants', applicantsRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/boatrecords', boatRecordsRoutes); // Mount boat records API
 
 app.use('*', (req, res) => {
   res.status(404).json({ message: 'Endpoint not found' });

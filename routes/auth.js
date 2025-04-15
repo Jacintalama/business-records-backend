@@ -90,16 +90,18 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
+    // Extend the token expiration time to 30 days instead of 1 hour
     const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, {
-      expiresIn: '1h',
+      expiresIn: '30d',
     });
 
-    // Set the token cookie (adjust options for production as needed)
+    // Set the token cookie with a corresponding maxAge of 30 days
     res.cookie('token', token, {
       httpOnly: true,
-      secure: false,         // For local development (set true in production with HTTPS)
-      sameSite: 'lax',      // 'none' allows cookies on cross-origin requests
+      secure: process.env.NODE_ENV === 'production',  // Use secure flag in production
+      sameSite: 'lax',
       path: '/',
+      maxAge: 30 * 24 * 60 * 60 * 1000,  // 30 days expressed in milliseconds
     });
 
     return res.status(200).json({ message: 'Login successful' });
@@ -108,6 +110,7 @@ router.post('/login', async (req, res) => {
     return res.status(500).json({ message: 'Login failed' });
   }
 });
+  
 
 // ─── "ME" ENDPOINT ──────────────────────────────────────────────────────────────────────
 // Returns the authenticated user's details if the token is valid.
@@ -129,12 +132,90 @@ router.get('/me', async (req, res) => {
       id: user.id,
       username: user.username,
       firstName: user.firstName,
+      middleName: user.middleName,
       lastName: user.lastName,
+      extensionName: user.extensionName,
       email: user.email,
     });
   } catch (error) {
     console.error('Token verification error:', error);
     return res.status(401).json({ message: 'Invalid token' });
+  }
+});
+
+// ─── UPDATE PROFILE ENDPOINT ─────────────────────────────────────────────────────────────
+// This endpoint allows an authenticated user to update profile details.
+// Users can update their name details and email. If the password is to be updated,
+// the current password must be provided along with a new password and confirmation.
+router.put('/profile', async (req, res) => {
+  // Ensure the request is authenticated by checking the token
+  const token = req.cookies.token;
+  if (!token) {
+    return res.status(401).json({ message: 'Unauthorized: No token provided' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const user = await User.findByPk(decoded.id);
+    if (!user) {
+      return res.status(401).json({ message: 'Unauthorized: User not found' });
+    }
+
+    // Destructure fields from the request body
+    const {
+      firstName,
+      middleName,
+      lastName,
+      extensionName,
+      email,
+      password,         // New password (if updating)
+      currentPassword,  // Current password required for updating password
+      confirmPassword,  // Confirmation of the new password
+    } = req.body;
+
+    // Handle password update if password fields are provided
+    if (password || confirmPassword) {
+      if (!currentPassword) {
+        return res.status(400).json({ message: 'Current password is required to update password' });
+      }
+
+      // Verify that the current password matches the stored password
+      const isCurrentValid = await bcrypt.compare(currentPassword, user.password);
+      if (!isCurrentValid) {
+        return res.status(401).json({ message: 'Current password is incorrect' });
+      }
+
+      if (password !== confirmPassword) {
+        return res.status(400).json({ message: 'New passwords do not match' });
+      }
+
+      // Hash the new password and update the user's password
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(password, salt);
+    }
+
+    // Update profile details if provided
+    if (firstName !== undefined) user.firstName = firstName;
+    if (middleName !== undefined) user.middleName = middleName;
+    if (lastName !== undefined) user.lastName = lastName;
+    if (extensionName !== undefined) user.extensionName = extensionName;
+
+    // If updating the email, ensure it’s not already taken by another user
+    if (email && email !== user.email) {
+      const existingEmail = await User.findOne({ where: { email } });
+      if (existingEmail) {
+        return res.status(409).json({ message: 'Email already exists' });
+      }
+      user.email = email;
+    }
+
+    // Save changes to the database
+    await user.save();
+
+    return res.status(200).json({ message: 'Profile updated successfully', user });
+  } catch (error) {
+    console.error('Profile update error:', error);
+    return res.status(500).json({ message: 'Profile update failed' });
   }
 });
 

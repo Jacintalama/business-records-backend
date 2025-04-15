@@ -25,11 +25,16 @@ module.exports = (sequelize, DataTypes) => {
     mayorsPermit: DataTypes.STRING,
     sanitaryInps: DataTypes.STRING,
     policeClearance: DataTypes.STRING,
+    barangayClearance: DataTypes.STRING, // NEW FIELD retained
+    zoningClearance: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     taxClearance: DataTypes.STRING,
     garbage: DataTypes.STRING,
-    garbageCollection: DataTypes.STRING,  // New field added
-    polluters: DataTypes.STRING,          // New field added
-    Occupation: DataTypes.STRING,         // New field added
+    garbageCollection: DataTypes.STRING,
+    polluters: DataTypes.STRING,
+    Occupation: DataTypes.STRING,
     verification: DataTypes.STRING,
     weightAndMass: DataTypes.STRING,
     healthClearance: DataTypes.STRING,
@@ -37,20 +42,21 @@ module.exports = (sequelize, DataTypes) => {
     menro: DataTypes.STRING,
     docTax: DataTypes.STRING,
     eggsFee: DataTypes.STRING,
-    // Removed market field
     marketCertification: DataTypes.STRING,
     surcharge25: DataTypes.STRING,
-    sucharge2: DataTypes.STRING, // renamed from surcharge5
+    sucharge2: DataTypes.STRING,
     miscellaneous: DataTypes.STRING,
     totalPayment: DataTypes.STRING,
     remarks: DataTypes.STRING,
-    // New frequency field:
+    Other: { // Newly added field in the model
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
     frequency: {
       type: DataTypes.ENUM('quarterly', 'semi-annual', 'annual'),
       allowNull: false,
       defaultValue: 'annual'
     },
-    // New renewal flag field:
     renewed: {
       type: DataTypes.BOOLEAN,
       allowNull: false,

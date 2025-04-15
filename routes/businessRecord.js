@@ -27,9 +27,6 @@ const extractBarangay = (address) => {
 };
 
 // Helper function to compute the period end date based on record date and frequency.
-// This function returns the last day of the quarter, half-year, or year for "quarterly",
-// "semi-annual", or "annual" records, respectively.
-// The function assumes the date is provided in "DD/MM/YYYY" format.
 const computePeriodEnd = (dateStr, frequency) => {
   let recordDate;
   if (typeof dateStr === 'string' && dateStr.includes('/')) {
@@ -40,28 +37,25 @@ const computePeriodEnd = (dateStr, frequency) => {
   }
   const year = recordDate.getFullYear();
   if (frequency === 'quarterly') {
-    const month = recordDate.getMonth(); // 0-indexed: Jan=0, Dec=11
+    const month = recordDate.getMonth();
     let quarterEndMonth;
     if (month < 3) {
-      quarterEndMonth = 2; // Q1 ends in March
+      quarterEndMonth = 2;
     } else if (month < 6) {
-      quarterEndMonth = 5; // Q2 ends in June
+      quarterEndMonth = 5;
     } else if (month < 9) {
-      quarterEndMonth = 8; // Q3 ends in September
+      quarterEndMonth = 8;
     } else {
-      quarterEndMonth = 11; // Q4 ends in December
+      quarterEndMonth = 11;
     }
-    // Last day of the quarter: setting day to 0 returns the last day of the previous month.
     return new Date(year, quarterEndMonth + 1, 0);
   } else if (frequency === 'semi-annual') {
     const month = recordDate.getMonth();
-    const periodEndMonth = month < 6 ? 5 : 11; // First half ends in June, second in December
+    const periodEndMonth = month < 6 ? 5 : 11;
     return new Date(year, periodEndMonth + 1, 0);
   } else if (frequency === 'annual') {
-    // For annual records, the period ends on December 31.
     return new Date(year, 11, 31);
   }
-  // Fallback: return the original record date if frequency is unrecognized.
   return recordDate;
 };
 
@@ -75,21 +69,19 @@ router.get('/reports', async (req, res) => {
       return res.status(400).json({ message: "Year and barangay are required" });
     }
 
-    // If delinquent flag is provided, apply logic using frequency, period end date, and renewed flag.
     if (delinquent === "true") {
       const records = await BusinessRecord.findAll({
         where: { year },
         include: [{
           model: Applicant,
           as: 'applicant',
-          attributes: [], // no extra columns needed
+          attributes: [],
           where: {
             applicantAddress: { [Op.iLike]: `%${barangay}%` }
           }
         }]
       });
       const now = new Date();
-      // Count a record as delinquent if it has not been renewed and its computed period end is past.
       const delinquentRecords = records.filter(record => {
         if (!record.date || !record.frequency) return false;
         const periodEnd = computePeriodEnd(record.date, record.frequency);
@@ -100,8 +92,7 @@ router.get('/reports', async (req, res) => {
         businessTax: { new: delinquentCount, renew: 0, total: delinquentCount }
       });
     }
-    
-    // Otherwise, count records by remarks ("new" and "renew")
+
     const newCount = await BusinessRecord.count({
       where: {
         year,
@@ -146,8 +137,6 @@ router.post('/', async (req, res) => {
     if (!token) {
       return res.status(401).json({ message: 'Unauthorized: No token provided' });
     }
-    console.log('Token received in create endpoint:', token);
-
     let decoded;
     try {
       decoded = jwt.verify(token, JWT_SECRET);
@@ -156,8 +145,9 @@ router.post('/', async (req, res) => {
     }
     const userId = decoded.id;
 
+    // Destructure request body including the new natureOfBusiness field for Applicant
     const {
-      applicantId, // optional
+      applicantId,
       applicantName,
       applicantAddress,
       businessName,
@@ -172,9 +162,9 @@ router.post('/', async (req, res) => {
       policeClearance,
       taxClearance,
       garbage,
-      garbageCollection, // New field added
-      polluters,         // New field added
-      Occupation,        // New field added
+      garbageCollection,
+      polluters,
+      Occupation,
       verification,
       weightAndMass,
       healthClearance,
@@ -182,25 +172,32 @@ router.post('/', async (req, res) => {
       menro,
       docTax,
       eggsFee,
-      marketCertification, // new field
+      marketCertification,
       surcharge25,
-      sucharge2, // renamed from surcharge5
+      sucharge2,
       miscellaneous,
       totalPayment,
       remarks,
-      frequency, // New field for renewal frequency
-      renewed // Optional field: true if the record is renewed
+      frequency,
+      renewed,
+      zoningClearance,
+      // NEW FIELDS:
+      barangayClearance,
+      Other,
+      natureOfBusiness // New field for the Applicant
     } = req.body;
 
     let applicant;
-    // If applicantId is provided, use it
     if (applicantId) {
       applicant = await Applicant.findByPk(applicantId);
       if (!applicant) {
         return res.status(400).json({ message: 'Applicant not found.' });
       }
+      // Optionally update the applicant's natureOfBusiness if provided:
+      if (typeof natureOfBusiness !== 'undefined') {
+        await applicant.update({ natureOfBusiness });
+      }
     } else {
-      // Otherwise, create a new applicant if required fields exist
       if (!applicantName || !applicantAddress || !businessName) {
         return res.status(400).json({
           message:
@@ -208,16 +205,17 @@ router.post('/', async (req, res) => {
         });
       }
       const barangay = extractBarangay(applicantAddress);
+      // Note: The applicant object is created with businessName followed immediately by natureOfBusiness.
       applicant = await Applicant.create({
         applicantName,
         applicantAddress,
         businessName,
+        natureOfBusiness,          // This field comes right after businessName in the object literal order.
         capitalInvestment: capitalInvestment ?? 0,
         barangay,
       });
     }
 
-    // Create the BusinessRecord (if renewed is not provided, default to false)
     const newRecord = await BusinessRecord.create({
       applicantId: applicant.id,
       year,
@@ -247,7 +245,11 @@ router.post('/', async (req, res) => {
       totalPayment,
       remarks,
       frequency,
-      renewed: renewed || false, // use provided value or default to false
+      renewed: renewed || false,
+      zoningClearance,
+      // NEW FIELDS:
+      barangayClearance,
+      Other,
       userId,
     });
 
@@ -278,10 +280,27 @@ router.get('/', async (req, res) => {
         applicantAddress: { [Op.iLike]: `%${barangay}%` }
       };
     }
-    const records = await BusinessRecord.findAll({
+    let records = await BusinessRecord.findAll({
       where: whereClause,
       include: includeOptions,
     });
+
+    // Transform each record to ensure applicant's businessName is followed by natureOfBusiness
+    records = records.map(record => {
+      if (record.applicant) {
+        record.applicant = {
+          id: record.applicant.id,
+          applicantName: record.applicant.applicantName,
+          applicantAddress: record.applicant.applicantAddress,
+          businessName: record.applicant.businessName,
+          natureOfBusiness: record.applicant.natureOfBusiness, // Positioned immediately after businessName
+          capitalInvestment: record.applicant.capitalInvestment,
+          barangay: record.applicant.barangay,
+        };
+      }
+      return record;
+    });
+
     return res.status(200).json({ records });
   } catch (error) {
     console.error('Error fetching records:', error);
@@ -294,11 +313,23 @@ router.get('/', async (req, res) => {
 // =========================
 router.get('/:id', async (req, res) => {
   try {
-    const record = await BusinessRecord.findByPk(req.params.id, {
+    let record = await BusinessRecord.findByPk(req.params.id, {
       include: [{ model: Applicant, as: 'applicant' }],
     });
     if (!record) {
       return res.status(404).json({ message: 'Record not found.' });
+    }
+    // Transform applicant object to ensure ordered keys
+    if (record.applicant) {
+      record.applicant = {
+        id: record.applicant.id,
+        applicantName: record.applicant.applicantName,
+        applicantAddress: record.applicant.applicantAddress,
+        businessName: record.applicant.businessName,
+        natureOfBusiness: record.applicant.natureOfBusiness,
+        capitalInvestment: record.applicant.capitalInvestment,
+        barangay: record.applicant.barangay,
+      };
     }
     return res.status(200).json({ record });
   } catch (error) {
@@ -327,6 +358,8 @@ router.put('/:id', async (req, res) => {
       mayorsPermit: req.body.mayorsPermit,
       sanitaryInps: req.body.sanitaryInps,
       policeClearance: req.body.policeClearance,
+      barangayClearance: req.body.barangayClearance,
+      zoningClearance: req.body.zoningClearance,
       taxClearance: req.body.taxClearance,
       garbage: req.body.garbage,
       garbageCollection: req.body.garbageCollection,
@@ -347,6 +380,7 @@ router.put('/:id', async (req, res) => {
       remarks: req.body.remarks,
       frequency: req.body.frequency,
       renewed: req.body.renewed || false,
+      Other: req.body.Other,
     });
     if (record.applicant) {
       const newBarangay = extractBarangay(req.body.applicantAddress || '');
@@ -354,6 +388,7 @@ router.put('/:id', async (req, res) => {
         applicantName: req.body.applicantName,
         applicantAddress: req.body.applicantAddress,
         businessName: req.body.businessName,
+        natureOfBusiness: req.body.natureOfBusiness, // Update natureOfBusiness next to businessName
         capitalInvestment: req.body.capitalInvestment,
         barangay: newBarangay || record.applicant.barangay,
       });
