@@ -6,6 +6,16 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // BusinessRecord belongs to an Applicant
       this.belongsTo(models.Applicant, { foreignKey: 'applicantId', as: 'applicant' });
+
+      // BusinessRecord ↔ MayorPermit through BusinessRecordPermit
+      this.belongsToMany(models.MayorPermit, {
+        through: models.BusinessRecordPermit,
+        foreignKey: 'businessRecordId',
+        otherKey: 'mayorPermitId',
+        as: 'permits'
+      });
+
+      // (any other associations you already have…)
     }
   }
 
@@ -25,7 +35,7 @@ module.exports = (sequelize, DataTypes) => {
     mayorsPermit: DataTypes.STRING,
     sanitaryInps: DataTypes.STRING,
     policeClearance: DataTypes.STRING,
-    barangayClearance: DataTypes.STRING, // NEW FIELD retained
+    barangayClearance: DataTypes.STRING,
     zoningClearance: {
       type: DataTypes.STRING,
       allowNull: true,
@@ -48,7 +58,7 @@ module.exports = (sequelize, DataTypes) => {
     miscellaneous: DataTypes.STRING,
     totalPayment: DataTypes.STRING,
     remarks: DataTypes.STRING,
-    Other: { // Newly added field in the model
+    Other: {
       type: DataTypes.TEXT,
       allowNull: true,
     },

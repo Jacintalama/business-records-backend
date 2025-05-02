@@ -4,29 +4,32 @@ const cookieParser = require('cookie-parser');
 
 const app = express();
 
-// Allow requests from your frontend over the network
+// Allow requests from your frontend
 app.use(cors({
-  origin: 'http://192.168.1.107:3001', // <-- update this to your actual frontend URL
+  origin: 'http://192.168.1.107:3001',
   credentials: true,
 }));
 
 app.use(express.json());
 app.use(cookieParser());
 
-// Routes
+// Import your routers
 const businessRecordRoutes = require('./routes/businessRecord');
-const applicantsRoutes = require('./routes/applicants');
-const authRoutes = require('./routes/auth');
-const boatRecordsRoutes = require('./routes/boatrecords'); // Added boat records routes
+const mayorPermitsRouter  = require('./routes/mayorPermits');
+const applicantsRoutes     = require('./routes/applicants');
+const authRoutes           = require('./routes/auth');
+const boatRecordsRoutes    = require('./routes/boatrecords');
 
 app.get('/', (req, res) => {
   res.send('🚀 Backend API is running. Use /api/... endpoints.');
 });
 
-app.use('/api/business-record', businessRecordRoutes);
-app.use('/api/applicants', applicantsRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/boatrecords', boatRecordsRoutes); // Mount boat records API
+// Mount them in order:
+app.use('/api/business-record',         businessRecordRoutes);
+app.use('/api/business-record/mp',      mayorPermitsRouter);    // ← here’s the new one
+app.use('/api/applicants',              applicantsRoutes);
+app.use('/api/auth',                    authRoutes);
+app.use('/api/boatrecords',             boatRecordsRoutes);
 
 app.use('*', (req, res) => {
   res.status(404).json({ message: 'Endpoint not found' });
@@ -38,8 +41,6 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3000;
-
-// ✅ Important: allow LAN access
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server is running on http://0.0.0.0:${PORT}`);
 });
