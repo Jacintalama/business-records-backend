@@ -67,6 +67,11 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       defaultValue: 'annual'
     },
+    expired: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    
     renewed: {
       type: DataTypes.BOOLEAN,
       allowNull: false,

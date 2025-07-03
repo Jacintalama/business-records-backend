@@ -151,7 +151,7 @@ router.post('/', async (req, res) => {
       secFee, menro, docTax, eggsFee,
       marketCertification, surcharge25, sucharge2,
       miscellaneous, totalPayment, remarks,
-      frequency, renewed, Other,
+      frequency, renewed, Other,expired,
       // New permits array:
       permits = []
     } = req.body;
@@ -289,6 +289,39 @@ router.get('/:id', async (req, res) => {
 });
 
 // =========================
+// Mark a business record as expired
+// =========================
+router.patch('/:id/expire', async (req, res) => {
+  try {
+    const record = await BusinessRecord.findByPk(req.params.id);
+    if (!record) return res.status(404).json({ message: 'Record not found.' });
+
+    await record.update({ expired: true });
+
+    return res.status(200).json({ message: 'Record marked as expired.', record });
+  } catch (error) {
+    console.error('Error expiring record:', error);
+    return res.status(500).json({ message: error.message });
+  }
+});
+// =========================
+// Activate a business record (unexpire)
+// =========================
+router.patch('/:id/activate', async (req, res) => {
+  try {
+    const record = await BusinessRecord.findByPk(req.params.id);
+    if (!record) return res.status(404).json({ message: 'Record not found.' });
+
+    await record.update({ expired: false });
+
+    return res.status(200).json({ message: 'Record activated.', record });
+  } catch (error) {
+    console.error('Error activating record:', error);
+    return res.status(500).json({ message: error.message });
+  }
+});
+
+// =========================
 // UPDATE a business record (and its permits)
 // =========================
 router.put('/:id', async (req, res) => {
@@ -329,7 +362,9 @@ router.put('/:id', async (req, res) => {
       remarks: req.body.remarks,
       frequency: req.body.frequency,
       renewed: req.body.renewed || false,
+      expired: req.body.expired || false,
       Other: req.body.Other
+      
     });
 
     // Update applicant details if needed
