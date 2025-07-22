@@ -95,18 +95,20 @@ router.get('/reports', async (req, res) => {
 
     // count new vs renew by remarks
     const [newCount, renewCount] = await Promise.all([
-      BusinessRecord.count({ 
-        where: { year, remarks: { [Op.iLike]: 'new' } }, 
-        include: baseOpts.include 
+      BusinessRecord.count({
+        where: { year, remarks: { [Op.iLike]: '%new%' } },
+        include: baseOpts.include
       }),
-      BusinessRecord.count({ 
-        where: { year, remarks: { [Op.iLike]: 'renew' } }, 
-        include: baseOpts.include 
+      BusinessRecord.count({
+        where: { year, remarks: { [Op.iLike]: '%renew%' } },
+        include: baseOpts.include
       }),
     ]);
+
     return res.status(200).json({
       businessTax: { new: newCount, renew: renewCount, total: newCount + renewCount }
     });
+
   } catch (error) {
     console.error("Error fetching reports:", error);
     return res.status(500).json({ message: error.message });
@@ -151,7 +153,7 @@ router.post('/', async (req, res) => {
       secFee, menro, docTax, eggsFee,
       marketCertification, surcharge25, sucharge2,
       miscellaneous, totalPayment, remarks,
-      frequency, renewed, Other,expired,
+      frequency, renewed, Other, expired,
       // New permits array:
       permits = []
     } = req.body;
@@ -221,8 +223,8 @@ router.post('/', async (req, res) => {
       await Promise.all(permits.map(p =>
         BusinessRecordPermit.create({
           businessRecordId: record.id,
-          mayorPermitId:    p.mayorPermitId,
-          amount:           p.amount
+          mayorPermitId: p.mayorPermitId,
+          amount: p.amount
         })
       ));
     }
@@ -255,7 +257,8 @@ router.get('/', async (req, res) => {
     if (applicantId) where.applicantId = applicantId;
 
     const include = [
-      { model: Applicant, as: 'applicant',
+      {
+        model: Applicant, as: 'applicant',
         where: barangay ? { applicantAddress: { [Op.iLike]: `%${barangay}%` } } : undefined
       },
       { model: MayorPermit, as: 'permits', through: { attributes: ['amount'] } }
@@ -364,7 +367,7 @@ router.put('/:id', async (req, res) => {
       renewed: req.body.renewed || false,
       expired: req.body.expired || false,
       Other: req.body.Other
-      
+
     });
 
     // Update applicant details if needed
@@ -386,8 +389,8 @@ router.put('/:id', async (req, res) => {
       await Promise.all(req.body.permits.map(p =>
         BusinessRecordPermit.create({
           businessRecordId: record.id,
-          mayorPermitId:    p.mayorPermitId,
-          amount:           p.amount
+          mayorPermitId: p.mayorPermitId,
+          amount: p.amount
         })
       ));
     }
